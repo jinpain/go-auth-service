@@ -1,0 +1,79 @@
+services:
+  redis-token:
+    image: redis:latest
+    shm_size: 256mb
+    ports:
+      - "6379:6379"
+    networks:
+      - redis_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      start_period: 10s
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  redis-verification:
+    image: redis:latest
+    shm_size: 256mb
+    ports:
+      - "6380:6379"
+    networks:
+      - redis_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      start_period: 10s
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  redis-ui:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    environment:
+      RI_REDIS_HOST1: redis-token
+      RI_REDIS_HOST2: redis-verification
+    networks:
+      - redis_network
+
+  postgres:
+    image: postgres:18.0
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+    user: postgres
+    volumes:
+      - ./scripts/db:/docker-entrypoint-initdb.d/:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U postgres"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+    networks:
+      - postgres_network
+
+  migrations:
+    build:
+      context: scripts/deploy/docker
+      dockerfile: goose.dockerfile
+    environment:
+      GOOSE_DRIVER: ${GOOSE_DRIVER}
+      GOOSE_DBSTRING: ${GOOSE_DBSTRING}
+      GOOSE_MIGRATION_DIR: ${GOOSE_MIGRATION_DIR}
+    volumes:
+      - ${GOOSE_MIGRATION_DIR}:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["up"]
+    networks:
+      - postgres_network
+
+networks:
+  redis_network:
+    driver: bridge
+  postgres_network:
+    driver: bridge

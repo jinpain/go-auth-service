@@ -1,0 +1,29 @@
+service:
+  env: local
+  name: auth-service
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  name: auth_service_db 
+  ssl_mode: disabled
+redis-token:
+  host: localhost
+  port: 6379
+  password: 12345
+  db: 0
+  protocol: 3
+redis-verification:
+  host: localhost
+  port: 6380
+  password: 12345
+  db: 0
+  protocol: 3
+server:
+  host: localhost
+  port: 8080
+sql:
+  path: ./sql
+jwt:
+  secret: super_secret_key_123
