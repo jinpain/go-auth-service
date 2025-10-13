@@ -2,8 +2,6 @@ services:
   redis-token:
     image: redis:latest
     shm_size: 256mb
-    ports:
-      - "6379:6379"
     networks:
       - redis_network
     healthcheck:
@@ -16,8 +14,6 @@ services:
   redis-verification:
     image: redis:latest
     shm_size: 256mb
-    ports:
-      - "6380:6379"
     networks:
       - redis_network
     healthcheck:
@@ -42,8 +38,6 @@ services:
     shm_size: 128mb
     environment:
       POSTGRES_PASSWORD: postgres
-    ports:
-      - 5432:5432
     user: postgres
     volumes:
       - ./scripts/db:/docker-entrypoint-initdb.d/:ro
@@ -71,6 +65,25 @@ services:
     command: ["up"]
     networks:
       - postgres_network
+
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      CONFIG_PATH: /app/config/prod.yaml
+    ports:
+      - 8080:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-token:
+        condition: service_healthy
+      redis-verification:
+        condition: service_healthy
+    networks:
+      - postgres_network
+      - redis_network
 
 networks:
   redis_network:
