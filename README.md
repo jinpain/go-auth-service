@@ -13,6 +13,6 @@ The service allows users to register, log in, and manage sessions. A PostgreSQL 
 
 # Installation and launch
 
-1) git clone https://github.com/your-username/auth-service.git
-2) cd auth-service
+1) git clone https://github.com/jinpain/go-auth-service.git
+2) cd go-auth-service
 3) docker-compose up --build
