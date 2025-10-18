@@ -1,7 +1,14 @@
 services:
   redis-token:
-    image: redis:latest
+    container_name: redis-token
+    image: redis:alpine3.22
     shm_size: 256mb
+    environment:
+      - REDIS_TOKEN_HOST
+      - REDIS_TOKEN_PORT
+      - REDIS_TOKEN_PASSWORD
+      - REDIS_TOKEN_DB
+      - REDIS_TOKEN_PROTOCOL
     networks:
       - redis_network
     healthcheck:
@@ -12,8 +19,15 @@ services:
       timeout: 5s
 
   redis-verification:
-    image: redis:latest
+    container_name: redis-verification
+    image: redis:alpine3.22
     shm_size: 256mb
+    environment:
+      - REDIS_VERIFICATION_HOST
+      - REDIS_VERIFICATION_PORT
+      - REDIS_VERIFICATION_PASSWORD
+      - REDIS_VERIFICATION_DB
+      - REDIS_VERIFICATION_PROTOCOL
     networks:
       - redis_network
     healthcheck:
@@ -24,66 +38,65 @@ services:
       timeout: 5s
 
   redis-ui:
-    image: redis/redisinsight:latest
-    ports:
-      - "5540:5540"
+    container_name: redis-ui
+    image: redis/redisinsight:2.70
     environment:
       RI_REDIS_HOST1: redis-token
       RI_REDIS_HOST2: redis-verification
-    networks:
-      - redis_network
-
-  postgres:
-    image: postgres:18.0
-    shm_size: 128mb
-    environment:
-      POSTGRES_PASSWORD: postgres
-    user: postgres
-    volumes:
-      - ./scripts/db:/docker-entrypoint-initdb.d/:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-U postgres"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
-    networks:
-      - postgres_network
-
-  migrations:
-    build:
-      context: scripts/deploy/docker
-      dockerfile: goose.dockerfile
-    environment:
-      GOOSE_DRIVER: ${GOOSE_DRIVER}
-      GOOSE_DBSTRING: ${GOOSE_DBSTRING}
-      GOOSE_MIGRATION_DIR: ${GOOSE_MIGRATION_DIR}
-    volumes:
-      - ${GOOSE_MIGRATION_DIR}:/migrations:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: ["up"]
-    networks:
-      - postgres_network
-
-  app:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    environment:
-      CONFIG_PATH: /app/config/prod.yaml
     ports:
-      - 8080:8080
+      - "5540:5540"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis-token:
         condition: service_healthy
       redis-verification:
         condition: service_healthy
     networks:
-      - postgres_network
       - redis_network
+
+  postgres:
+    container_name: postgres
+    image: postgres:18.0-alpine3.22
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST_AUTH_METHOD=trust # only for dev
+    networks:
+      - postgres_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U ${DB_USER}"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+
+  pg-web-admin:
+    container_name: pg-web-admin
+    image: dpage/pgadmin4:9.9.0
+    environment:
+      - PGADMIN_DEFAULT_EMAIL
+      - PGADMIN_DEFAULT_PASSWORD
+      - PGADMIN_LISTEN_PORT
+    ports:
+      - "5050:5050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - postgres_network
+      
+  migrations:
+    container_name: database-migrations
+    image: kukymbr/goose-docker:3.26.0
+    environment:
+      - GOOSE_DRIVER=${DB_DRIVER}
+      - GOOSE_DBSTRING=host=${DB_HOST} port=${DB_PORT} user=${DB_USER} password=${DB_PASSWORD} dbname=${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src/backend/migrations:/migrations  
+    networks:
+      - postgres_network
 
 networks:
   redis_network:
