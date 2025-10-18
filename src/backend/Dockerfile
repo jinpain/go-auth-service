@@ -1,6 +1,8 @@
-FROM golang:1.25.2 AS build
+FROM golang:1.25.2-alpine3.22 AS build
 
-WORKDIR /app
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+
+WORKDIR /build
 
 COPY go.mod go.sum ./
 
@@ -8,17 +10,18 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/app ./cmd/main.go
+RUN go build -o /app ./cmd/
 
-# --- --- --- --- --- --- #
-FROM gcr.io/distroless/base-debian12
+FROM alpine:3.22 AS final
 
-COPY --from=build /app/app /app/app
+COPY --from=build /app /bin/app
 
-COPY --from=build /app/config /app/config
+COPY --from=build /build/config/config.yaml /etc/app/config.yaml
 
-COPY --from=build /app/sql /app/sql
+COPY --from=build /build/sql/ /sql/
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/app"]
+ENV CONFIG_PATH=/etc/app/config.yaml
+
+ENTRYPOINT ["/bin/app"]

@@ -1,11 +1,6 @@
 package config
 
 type ServiceConfig struct {
-	Env  string `yaml:"env" env-required:"true"`
-	Name string `yaml:"name" env-required:"true"`
+	Env  string `yaml:"env" env:"SERVICE_ENV" env-required:"true"`
+	Name string `yaml:"name" env:"SERVICE_NAME" env-required:"true"`
 }
-
-const (
-	EnvLocal = "local"
-	EnvProd  = "prod"
-)
