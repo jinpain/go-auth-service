@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Docker on server
 
 on:
     push:
@@ -7,16 +7,18 @@ on:
 
 jobs:
     deploy:
-        name: deploy
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
         steps:
+        - name: Checkout code
+          uses: actions/checkout@v5
+
         - name: 
-          uses: appleboy/ssh-action@v1
+          uses: appleboy/ssh-action@v1.2.2
           with:
             host: ${{ secrets.HOST }}
             username: ${{ secrets.USER }}
             password: ${{ secrets.PASSWORD }}
-            script: 
+            script: |
                 echo "Pulling latest changes from git..."
                 cd /opt/project/go-auth-service
                 git pull origin main
