@@ -24,7 +24,7 @@ import (
 func Run(cfg *config.Config) error {
 	log := logger.New(cfg.ServiceConfig.Env)
 
-	log.Info("Application running...")
+	log.Info("Application running!")
 
 	pgConnStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
 		cfg.DatabaseConfig.Host, cfg.DatabaseConfig.Port, cfg.DatabaseConfig.User,
