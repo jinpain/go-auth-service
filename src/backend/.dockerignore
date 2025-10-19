@@ -1,0 +1,8 @@
+docs/
+migrations/
+
+.gitignore
+.dockerignore
+Dockerfile
+Makefile
+.env

@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 )
 
 const (
@@ -29,9 +28,9 @@ func LoadPath[ConfigType any](configPath string) (*ConfigType, error) {
 		return nil, fmt.Errorf("cannot read config file %q: %w", configPath, err)
 	}
 
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	fmt.Println("Error loading .env file")
+	// }
 
 	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		return nil, fmt.Errorf("cannot read environment variables: %w", err)
