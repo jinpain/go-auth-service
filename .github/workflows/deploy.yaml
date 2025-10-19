@@ -1,0 +1,27 @@
+name: Deploy
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        name: deploy
+        runs-on: self-hosted
+        steps:
+        - name: 
+          uses: appleboy/ssh-action@v1
+          with:
+            host: ${{ secrets.HOST }}
+            username: ${{ secrets.USER }}
+            password: ${{ secrets.PASSWORD }}
+            script: 
+                echo "Pulling latest changes from git..."
+                cd /opt/project/go-auth-service
+                git pull origin main
+
+                echo "Building Docker images..."
+                docker compose -f /opt/project/go-auth-service/docker-compose.yml up --build -d backend frontend
+
+                echo "Deployment completed successfully!"
