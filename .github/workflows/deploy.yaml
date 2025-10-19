@@ -4,6 +4,9 @@ on:
     push:
         branches:
             - main
+        paths:
+            - 'src/frontend/**'
+            - 'src/backend/**'
 
 jobs:
     deploy:
@@ -24,6 +27,6 @@ jobs:
                 git pull origin main
 
                 echo "Building Docker images..."
-                docker compose -f /opt/project/go-auth-service/docker-compose.yml up --build -d backend frontend
+                docker compose -f /opt/project/go-auth-service/docker-compose.yaml up --build -d backend frontend
 
                 echo "Deployment completed successfully!"
