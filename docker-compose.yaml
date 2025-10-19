@@ -3,12 +3,6 @@ services:
     container_name: redis-token
     image: redis:alpine3.22
     shm_size: 256mb
-    environment:
-      - REDIS_TOKEN_HOST
-      - REDIS_TOKEN_PORT
-      - REDIS_TOKEN_PASSWORD
-      - REDIS_TOKEN_DB
-      - REDIS_TOKEN_PROTOCOL
     networks:
       - redis_network
     healthcheck:
@@ -22,12 +16,6 @@ services:
     container_name: redis-verification
     image: redis:alpine3.22
     shm_size: 256mb
-    environment:
-      - REDIS_VERIFICATION_HOST
-      - REDIS_VERIFICATION_PORT
-      - REDIS_VERIFICATION_PASSWORD
-      - REDIS_VERIFICATION_DB
-      - REDIS_VERIFICATION_PROTOCOL
     networks:
       - redis_network
     healthcheck:
@@ -56,6 +44,7 @@ services:
   postgres:
     container_name: postgres
     image: postgres:18.0-alpine3.22
+    shm_size: 128mb
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -97,6 +86,54 @@ services:
       - ./src/backend/migrations:/migrations  
     networks:
       - postgres_network
+  
+  app:
+    container_name: app
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    environment:
+        # Redis Token
+      - REDIS_TOKEN_HOST
+      - REDIS_TOKEN_PORT
+      - REDIS_TOKEN_PASSWORD
+      - REDIS_TOKEN_DB
+      - REDIS_TOKEN_PROTOCOL
+        # Redis Verification
+      - REDIS_VERIFICATION_HOST
+      - REDIS_VERIFICATION_PORT
+      - REDIS_VERIFICATION_PASSWORD
+      - REDIS_VERIFICATION_DB
+      - REDIS_VERIFICATION_PROTOCOL
+        # Database
+      - DB_HOST
+      - DB_PORT
+      - DB_USER
+      - DB_PASSWORD
+      - DB_NAME
+      - DB_SSL_MODE
+        # Service
+      - SERVICE_ENV
+      - SERVICE_NAME
+        # Server
+      - SERVER_HOST
+      - SERVER_PORT
+        # SQL
+      - SQL_PATH
+        # JWT
+      - JWT_SECRET
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis-token:
+        condition: service_healthy
+      redis-verification:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - postgres_network
+      - redis_network
 
 networks:
   redis_network:
