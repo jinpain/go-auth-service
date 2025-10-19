@@ -3,6 +3,7 @@ services:
     container_name: redis-token
     image: redis:alpine3.22
     shm_size: 256mb
+    restart: unless-stopped
     networks:
       - redis_network
     healthcheck:
@@ -16,6 +17,7 @@ services:
     container_name: redis-verification
     image: redis:alpine3.22
     shm_size: 256mb
+    restart: unless-stopped
     networks:
       - redis_network
     healthcheck:
@@ -25,31 +27,15 @@ services:
       retries: 5
       timeout: 5s
 
-  redis-ui:
-    container_name: redis-ui
-    image: redis/redisinsight:2.70
-    environment:
-      RI_REDIS_HOST1: redis-token
-      RI_REDIS_HOST2: redis-verification
-    ports:
-      - "5540:5540"
-    depends_on:
-      redis-token:
-        condition: service_healthy
-      redis-verification:
-        condition: service_healthy
-    networks:
-      - redis_network
-
   postgres:
     container_name: postgres
     image: postgres:18.0-alpine3.22
     shm_size: 128mb
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_HOST_AUTH_METHOD=trust # only for dev
     networks:
       - postgres_network
     healthcheck:
@@ -57,21 +43,6 @@ services:
       start_period: 5s
       interval: 10s
       retries: 5
-
-  pg-web-admin:
-    container_name: pg-web-admin
-    image: dpage/pgadmin4:9.9.0
-    environment:
-      - PGADMIN_DEFAULT_EMAIL
-      - PGADMIN_DEFAULT_PASSWORD
-      - PGADMIN_LISTEN_PORT
-    ports:
-      - "5050:5050"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - postgres_network
       
   migrations:
     container_name: database-migrations
@@ -87,11 +58,12 @@ services:
     networks:
       - postgres_network
   
-  app:
-    container_name: app
+  backend:
+    container_name: backend
     build:
       context: ./src/backend
       dockerfile: Dockerfile
+    restart: unless-stopped
     environment:
         # Redis Token
       - REDIS_TOKEN_HOST
@@ -122,8 +94,6 @@ services:
       - SQL_PATH
         # JWT
       - JWT_SECRET
-    ports:
-      - "8080:8080"
     depends_on:
       redis-token:
         condition: service_healthy
@@ -134,9 +104,26 @@ services:
     networks:
       - postgres_network
       - redis_network
+      - app_network
+  
+  frontend:
+    container_name: frontend
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
 
 networks:
   redis_network:
     driver: bridge
   postgres_network:
+    driver: bridge
+  app_network:
     driver: bridge
