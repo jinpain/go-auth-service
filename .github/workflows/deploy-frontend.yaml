@@ -4,24 +4,25 @@ on:
     push:
         branches:
             - main
-        patches:
+        paths:
             - 'src/frontend/**'
         
 jobs:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Deploy Frontend
-      uses: appleboy/ssh-action@v1.2.2
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        password: ${{ secrets.SSH_PASSWORD }}
-        script: |
-          echo "Pulling latest changes for frontend..."
-          cd /opt/project/go-auth-service
-          git pull origin main
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Deploy Frontend
+          uses: appleboy/ssh-action@v1.2.2
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            password: ${{ secrets.SSH_PASSWORD }}
+            script: |
+                echo "Pulling latest changes for frontend..."
+                cd /opt/project/go-auth-service
+                git pull origin main
 
-          echo "Building Docker images for frontend..."
-          docker compose -f /opt/project/go-auth-service/docker-compose.yml up --build -d frontend
+                echo "Building Docker images for frontend..."
+                docker compose -f /opt/project/go-auth-service/docker-compose.yml up --build -d frontend
 
-          echo "Frontend deployment completed successfully!"
+                echo "Frontend deployment completed successfully!"

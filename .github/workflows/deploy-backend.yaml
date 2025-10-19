@@ -4,24 +4,25 @@ on:
     push:
         branches:
             - main
-        patches:
+        paths:
             - 'src/backend/**'
         
 jobs:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Deploy Backend
-      uses: appleboy/ssh-action@v1.2.2
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        password: ${{ secrets.SSH_PASSWORD }}
-        script: |
-          echo "Pulling latest changes for backend..."
-          cd /opt/project/go-auth-service
-          git pull origin main
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Deploy Backend
+          uses: appleboy/ssh-action@v1.2.2
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            password: ${{ secrets.SSH_PASSWORD }}
+            script: |
+                echo "Pulling latest changes for backend..."
+                cd /opt/project/go-auth-service
+                git pull origin main
 
-          echo "Building Docker images for backend..."
-          docker compose -f /opt/project/go-auth-service/docker-compose.yml up --build -d backend
+                echo "Building Docker images for backend..."
+                docker compose -f /opt/project/go-auth-service/docker-compose.yml up --build -d backend
 
-          echo "Backend deployment completed successfully!"
+                echo "Backend deployment completed successfully!"
